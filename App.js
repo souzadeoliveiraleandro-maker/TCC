@@ -1,9 +1,24 @@
-import React, {Component} from "react";
-import Header from './src/componentes/Header'
-import Post from './src/componentes/Post'
+// [Local do seu App.js ou index.js]
+
+// 1. Imports do React e RN
+import React, { Component } from "react";
 import { View } from "react-native";
 
+// 2. Imports de terceiros/bibliotecas
+import 'react-native-gesture-handler';
+import { enableScreens } from 'react-native-screens';
+
+// 3. Chamada da função de inicialização APÓS todos os imports
+enableScreens();
+
+// 4. Imports de componentes locais
+import Header from './src/componentes/Header'
+import Post from './src/componentes/Post'
+
+
 export default class App extends Component{
+    // ... restante da classe
+
     render() {
         const comments = [{
             nickname: 'Leandro Souza',
