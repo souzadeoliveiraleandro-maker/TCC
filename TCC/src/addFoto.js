@@ -12,5 +12,5 @@ Alert} from 'react-native'
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { connect } from 'react-redux';
-import { addFoto } from '../store/actions/userActions';
+import { addFoto } from '../store/actions/userActions';gg
 import { bindActionCreators } from 'redux';
