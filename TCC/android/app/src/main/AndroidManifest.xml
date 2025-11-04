@@ -1,9 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+<<<<<<< HEAD:TCC/android/app/src/main/AndroidManifest.xml
 <uses-permission android:name="android.permission.SYSTEM_ALERT_WIND" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+=======
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    
+
+>>>>>>> a1834e917fcb8e41846ef84a2880b91bae14de6b:android/app/src/main/AndroidManifest.xml
 
     <application
       android:name=".MainApplication"
