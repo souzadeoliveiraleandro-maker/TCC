@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Feed from "./Feed";
-
+import AddFoto from "./AddFoto";
 // TODO: Criar e importar as telas AddPhoto e Profile
 // import AddPhoto from './screens/AddPhoto';
 // import Profile from './screens/Profile';
@@ -29,7 +29,7 @@ function MenuNavigator() {
             />
             <Tab.Screen
                 name="AddPhoto"
-                component={Feed} // TODO: Trocar por AddPhoto quando o componente existir
+                component={AddFoto} // TODO: Trocar por AddPhoto quando o componente existir
                 options={{ title: 'Add Picture', tabBarIcon: ({ color, size }) => <Icon name='camera' size={size} color={color} /> }}
             />
             <Tab.Screen
