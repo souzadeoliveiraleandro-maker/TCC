@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Feed from "./Feed";
-
+import addFoto from "./addFoto";
 // TODO: Criar e importar as telas AddPhoto e Profile
 // import AddPhoto from './screens/AddPhoto';
 // import Profile from './screens/Profile';
