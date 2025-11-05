@@ -46,7 +46,7 @@ class Feed extends Component{
 const styles =StyleSheet.create({
     container:{
         flex:1,
-        backgroundColor: '#000000ff'
+        backgroundColor: '#F5FCFF'
     }
 })
 
