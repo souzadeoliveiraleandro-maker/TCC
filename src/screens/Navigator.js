@@ -5,6 +5,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Feed from "./Feed";
 import AddFoto from "./AddFoto";
+import Profile from "./Profile";
+
 // TODO: Criar e importar as telas AddPhoto e Profile
 // import AddPhoto from './screens/AddPhoto';
 // import Profile from './screens/Profile';
@@ -34,7 +36,7 @@ function MenuNavigator() {
             />
             <Tab.Screen
                 name="Profile"
-                component={Feed} // TODO: Trocar por Profile quando o componente existir
+                component={Profile} // TODO: Trocar por Profile quando o componente existir
                 options={{ tabBarIcon: ({ color, size }) => <Icon name='user' size={size} color={color} /> }}
             />
         </Tab.Navigator>
