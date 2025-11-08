@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Feed from "./Feed";
 import AddFoto from "./AddFoto";
-import Profile from "./Profile";    
+import Profile from "./Profile";
 // TODO: Criar e importar as telas AddPhoto e Profile
 // import AddPhoto from './screens/AddPhoto';
 // import Profile from './screens/Profile';
