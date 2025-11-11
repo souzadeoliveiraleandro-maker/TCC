@@ -49,7 +49,7 @@ class register extends React.Component{
                 <TouchableOpacity onPress={ () => {
                     this.props.navigation.navigate('Login') 
                 }} style={styles.Button}>  
-                    <Text style={styles.buttomText}>Cadastrar</Text>
+                    <Text style={styles.ButtonText}>Cadastrar</Text>
                 </TouchableOpacity> 
             </View>
         )
@@ -66,7 +66,7 @@ class register extends React.Component{
         padding:10,
         backgroundColor: '#4286f4',
     },
-    buttonText:{     
+    ButtonText:{     
         fontSize: 20,
         color: '#fff',
     },
@@ -82,4 +82,3 @@ class register extends React.Component{
     }
     })
 export default register
-

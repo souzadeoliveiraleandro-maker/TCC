@@ -1,51 +1,39 @@
-import react,{Component} from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, FlatList, View } from "react-native";
+import { useSelector, useDispatch } from 'react-redux';
+
 import Header from "../componentes/Header";
 import Post from "../componentes/Post";
+import { fetchPosts } from '../store/actions/posts';
 
-class Feed extends Component{
-    state = {
-        posts: [{
-            id: Math.random(),
-            nickname: 'Rafael Pereira',
-            email: 'rafael@gmail.com',
-            image: require('../../android/assets/imgs/pos1.jpg'),
-            comments: [{
-                nickname: 'Lyvia Otavia',
-                comments: 'Vai Flamengo'
-            },
-            {
-                nickname: 'Leandro Souza',
-                comments: 'isso ai Lyvia',
-            }]
-        }, {
-             id: Math.random(),
-             nickname: 'Araujo Da Silva',
-             email: 'araja.@gmail.com',
-             image : require('../../android/assets/imgs/post2.jpg'),
-             comments: [{
-                nickname: 'Leandro souza',
-                comments: 'Agora é guerra.'             }
-             ]
-        }]
-    }
+const Feed = (props) => {
+    // `useSelector` é o hook que lê um valor do estado do Redux.
+    // `state.posts` refere-se ao reducer combinado em `reducers/index.js`.
+    // `state.posts.posts` refere-se à propriedade `posts` dentro do `postsReducer`.
+    const posts = useSelector(state => state.posts.posts);
+    const dispatch = useDispatch();
 
-    render(){
-        return(
-            <View style={StyleSheet.container}>
-                <Header></Header>
-                <FlatList data={this.state.posts}
-                keyExtractor={item => `${item.id}`} 
-                renderItem={({item}) => <Post {...item}></Post>}
-                contentContainerStyle={{paddingBottom: 100}}></FlatList>
-            </View>
-        )
-    }
+    // `useEffect` substitui o `componentDidMount`.
+    // Ele executa a ação `fetchPosts` assim que o componente é montado.
+    useEffect(() => {
+        dispatch(fetchPosts());
+    }, [dispatch]);
+
+    return (
+        <View style={styles.container}>
+            <Header />
+            <FlatList
+                data={posts}
+                keyExtractor={item => `${item.id}`}
+                renderItem={({ item }) => <Post {...item} />}
+            />
+        </View>
+    );
 }
 
-const styles =StyleSheet.create({
-    container:{
-        flex:1,
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
         backgroundColor: '#F5FCFF'
     }
 })
