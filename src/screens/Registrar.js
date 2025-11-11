@@ -16,33 +16,33 @@ class register extends React.Component{
      render (){
         return( 
             <View style={styles.container}>     
-                <TextInput placeholder="Nome" style={styles.input}
+                <TextInput placeholder="Nome:" style={styles.input} placeholderTextColor='#000'
                 autoFocus={true} 
                 value={this.state.nome}
                 onChangeText={nome => this.setState({nome})} /> 
-                <TextInput placeholder="Sobrenome" style={styles.input}
+                <TextInput placeholder="Sobrenome:" style={styles.input} placeholderTextColor='#000'
                 autoFocus={true} 
                 value={this.state.sobrenome}
                 onChangeText={sobrenome => this.setState({sobrenome})} />
-                <TextInput placeholder="Email" style={styles.input}
+                <TextInput placeholder="Email:" style={styles.input} placeholderTextColor='#000'
                 autoFocus={true} keyboardType="email-address"
                 value={this.state.email}
                 onChangeText={email => this.setState({email})} />
-                <TextInput placeholder="Senha" style={styles.input}
+                <TextInput placeholder="Senha:" style={styles.input} placeholderTextColor='#000'
                 secureTextEntry={true} value={this.state.password}  
                 onChangeText={password => this.setState({password})} />
-                <TextInput placeholder="Confirmar Senha" style={styles.input}
+                <TextInput placeholder="Confirmar Senha:" style={styles.input} placeholderTextColor='#000'
                 secureTextEntry={true} value={this.state.confirmPassword}
                 onChangeText={confirmPassword => this.setState({confirmPassword})} />
-                <TextInput placeholder="CPF" style={styles.input}
+                <TextInput placeholder="CPF:" style={styles.input} placeholderTextColor='#000'
                 autoFocus={true}        
                 value={this.state.cpf}
                 onChangeText={cpf => this.setState({cpf})} />
-                <TextInput placeholder="Data de Nascimento" style={styles.input}    
+                <TextInput placeholder="Data de Nascimento:" style={styles.input} placeholderTextColor='#000'    
                 autoFocus={true}
                 value={this.state.datanacimento}
                 onChangeText={datanacimento => this.setState({datanacimento})} />
-                <TextInput placeholder="Número de Celular" style={styles.input}
+                <TextInput placeholder="Número de Celular:" style={styles.input} placeholderTextColor='#000'
                 autoFocus={true}
                 value={this.state.numerocelular}
                 onChangeText={numerocelular => this.setState({numerocelular})} />
@@ -64,16 +64,16 @@ class register extends React.Component{
     Button:{    
         marginTop:30,
         padding:10,
-        backgroundColor: '#4286f4',
+        backgroundColor: '#4286f4ff',
     },
     ButtonText:{     
         fontSize: 20,
-        color: '#fff',
+        color: '#f7f4f4ff',
     },
     input:{
         marginTop: 20,
         width: '90%',
-        backgroundColor: '#EEE',
+        backgroundColor: '#f6f8fcff',
         height: 40,
         borderWidth: 1,
         borderColor: '#333',

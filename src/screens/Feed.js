@@ -33,7 +33,6 @@ class Feed extends Component{
     render(){
         return(
             <View style={StyleSheet.container}>
-                <Header></Header>
                 <FlatList data={this.state.posts}
                 keyExtractor={item => `${item.id}`} 
                 renderItem={({item}) => <Post {...item}></Post>}
