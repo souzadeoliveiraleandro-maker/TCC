@@ -44,7 +44,7 @@ class AddFoto extends Component {
     
     // ⚠️ ATUALIZAÇÃO 3: Nova forma de tratar a resposta da API
     handleResponse = (response) => {
-        if (response.didCancel) {
+        if (response.didCancel) {   
             console.log('Seleção cancelada pelo usuário');
         } else if (response.errorCode) {
             console.log('ImagePicker Error: ', response.errorCode);
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
-        resizeMode: 'contain'  
+        resizeMode: 'contain' 
     },
     buttom: {
         marginTop: 30,
