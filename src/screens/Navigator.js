@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationContainer } from '@react-navigation/native';
-    
+
 
 // Componentes das Telas (Certifique-se que os caminhos estão corretos)
 import Feed from "./Feed";
@@ -12,6 +12,8 @@ import AddFoto from "./AddFoto";
 import Profile from "./Profile";
 import Registro from "./Registrar";
 import Login from "./Login";
+import Eventos from "./Eventos";
+
 
 // Definição dos Navegadores
 const Tab = createBottomTabNavigator();
@@ -23,7 +25,7 @@ const RootStack = createStackNavigator(); // 💡 NOVO: Stack para gerenciar a t
 // ------------------------------------------------------------------
 function AuthNavigator() {
     return (
-        <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+        <AuthStack.Navigator screenOptions={{ headerShown: true }}>
             {/* O Login será a primeira tela a ser exibida dentro desta pilha */}
             <AuthStack.Screen name="Login" component={Login} /> 
             <AuthStack.Screen name="Registro" component={Registro} />
@@ -39,8 +41,8 @@ function MenuNavigator() {
         <Tab.Navigator
             initialRouteName="Feed"
             screenOptions={{
-                headerShown: false,
-                tabBarShowLabel: false,
+                headerShown: true,
+                tabBarShowLabel: true,
                 tabBarActiveTintColor: '#007AFF',
                 tabBarInactiveTintColor: '#555',
             }}
@@ -49,7 +51,7 @@ function MenuNavigator() {
             <Tab.Screen name="Feed" component={Feed} options={{ tabBarIcon: ({ color, size }) => <Icon name='home' size={size} color={color} /> }}/>
             <Tab.Screen name="AddPhoto" component={AddFoto} options={{ title: 'Add Picture', tabBarIcon: ({ color, size }) => <Icon name='camera' size={size} color={color} /> }}/>
             <Tab.Screen name="Profile" component={Profile} options={{ tabBarIcon: ({ color, size }) => <Icon name='user' size={size} color={color} /> }}/>
-            <Tab.Screen name="Calendario" component={Feed} options={{ tabBarIcon: ({ color, size }) => <Icon name='calendar' size={size} color={color} /> }}/>
+            <Tab.Screen name="Calendario" component={Eventos} options={{ tabBarIcon: ({ color, size }) => <Icon name='calendar' size={size} color={color} /> }}/>
         </Tab.Navigator>
     );
 }

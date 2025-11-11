@@ -1,10 +1,11 @@
 import React, { Component} from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { Gravatar } from 'react-native-gravatar'
+import { useNavigation } from '@react-navigation/native'
 
 class Profile extends Component{
     logout = () => {
-
+        this.props.navigation.navigate('Auth')
     }
     render(){
         const options = { email: 'flyviasouzamelo@gmail.com', secure: true };

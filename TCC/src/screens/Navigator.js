@@ -11,7 +11,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import Feed from "./Feed";
 import AddFoto from "./AddFoto";
 import Profile from "./Profile";
-import Registro from "./Registrar";
+import Registro from "./Register";
 import Login from "./Login";
 
 // Definição dos Navegadores

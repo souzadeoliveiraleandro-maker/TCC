@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import Header from "../componentes/Header";
 import Post from "../componentes/Post";
-import { fetchPosts } from '../store/actions/posts';
+import { fetchPosts } from "../../../../store/actions/postsActions";
 
 const Feed = (props) => {
     // `useSelector` é o hook que lê um valor do estado do Redux.
