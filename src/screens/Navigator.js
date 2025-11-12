@@ -8,7 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 
 // Componentes das Telas (Certifique-se que os caminhos estão corretos)
 import Feed from "./Feed";
-import AddFoto from "./AddFoto";
+import AddEventos from "./AddEventos";
 import Profile from "./Profile";
 import Registro from "./Registrar";
 import Login from "./Login";
@@ -48,10 +48,10 @@ function MenuNavigator() {
             }}
         >
             {/* ... Suas rotas de abas (Feed, AddPhoto, Profile, Calendario) ... */}
-            <Tab.Screen name="Feed" component={Feed} options={{ tabBarIcon: ({ color, size }) => <Icon name='home' size={size} color={color} /> }}/>
-            <Tab.Screen name="AddPhoto" component={AddFoto} options={{ title: 'Add Picture', tabBarIcon: ({ color, size }) => <Icon name='camera' size={size} color={color} /> }}/>
-            <Tab.Screen name="Profile" component={Profile} options={{ tabBarIcon: ({ color, size }) => <Icon name='user' size={size} color={color} /> }}/>
-            <Tab.Screen name="Calendario" component={Eventos} options={{ tabBarIcon: ({ color, size }) => <Icon name='calendar' size={size} color={color} /> }}/>
+            <Tab.Screen name="Feed" component={Feed} options={{title: 'Feed', tabBarIcon: ({ color, size }) => <Icon name='home' size={size} color={color} /> }}/>
+            <Tab.Screen name="AddEvento" component={AddEventos} options={{ title: 'Adicionar Evento', tabBarIcon: ({ color, size }) => <Icon name='camera' size={size} color={color} /> }}/>
+            <Tab.Screen name="Profile" component={Profile} options={{title: 'Perfil', tabBarIcon: ({ color, size }) => <Icon name='user' size={size} color={color} /> }}/>
+            <Tab.Screen name="Calendario" component={Eventos} options={{title: 'Eventos',tabBarIcon: ({ color, size }) => <Icon name='calendar' size={size} color={color} /> }}/>
         </Tab.Navigator>
     );
 }
