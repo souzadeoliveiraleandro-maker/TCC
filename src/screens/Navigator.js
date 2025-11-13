@@ -2,9 +2,11 @@ import React from "react";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useNavigation } from '@react-navigation/native';
-import { NavigationContainer } from '@react-navigation/native';
+import { useNavigation, NavigationContainer } from '@react-navigation/native';
 
+// 🔑 IMPORTAÇÕES DO REDUX
+import { Provider } from 'react-redux';
+import { store } from '../redux/store'; // ⚠️ Ajuste o caminho para a sua store.js
 
 // Componentes das Telas (Certifique-se que os caminhos estão corretos)
 import Feed from "./Feed";
@@ -18,7 +20,7 @@ import Eventos from "./Eventos";
 // Definição dos Navegadores
 const Tab = createBottomTabNavigator();
 const AuthStack = createStackNavigator();
-const RootStack = createStackNavigator(); // 💡 NOVO: Stack para gerenciar a troca Auth <-> App
+const RootStack = createStackNavigator();
 
 // ------------------------------------------------------------------
 // 1. Navegador de Autenticação (Login, Registro)
@@ -26,7 +28,6 @@ const RootStack = createStackNavigator(); // 💡 NOVO: Stack para gerenciar a t
 function AuthNavigator() {
     return (
         <AuthStack.Navigator screenOptions={{ headerShown: true }}>
-            {/* O Login será a primeira tela a ser exibida dentro desta pilha */}
             <AuthStack.Screen name="Login" component={Login} /> 
             <AuthStack.Screen name="Registro" component={Registro} />
         </AuthStack.Navigator>
@@ -47,7 +48,6 @@ function MenuNavigator() {
                 tabBarInactiveTintColor: '#555',
             }}
         >
-            {/* ... Suas rotas de abas (Feed, AddPhoto, Profile, Calendario) ... */}
             <Tab.Screen name="Feed" component={Feed} options={{title: 'Feed', tabBarIcon: ({ color, size }) => <Icon name='home' size={size} color={color} /> }}/>
             <Tab.Screen name="AddEvento" component={AddEventos} options={{ title: 'Adicionar Evento', tabBarIcon: ({ color, size }) => <Icon name='camera' size={size} color={color} /> }}/>
             <Tab.Screen name="Profile" component={Profile} options={{title: 'Perfil', tabBarIcon: ({ color, size }) => <Icon name='user' size={size} color={color} /> }}/>
@@ -63,7 +63,6 @@ function RootNavigator() {
     return (
         <RootStack.Navigator 
             screenOptions={{ headerShown: false }}
-            // 🎯 O PONTO PRINCIPAL: Define a rota 'Auth' como a primeira a ser carregada.
             initialRouteName="Auth" 
         >
             <RootStack.Screen name="Auth" component={AuthNavigator} /> 
@@ -74,10 +73,13 @@ function RootNavigator() {
 
 
 // ------------------------------------------------------------------
-// Exportação Principal (Renderiza o Navegador Raiz)
+// 4. Exportação Principal com Conexão Global do Redux
 // ------------------------------------------------------------------
 export default () => (
-    <NavigationContainer>
-        <RootNavigator /> 
-    </NavigationContainer>
+    // 🔑 O Provider deve envolver o NavigationContainer
+    <Provider store={store}> 
+        <NavigationContainer>
+            <RootNavigator /> 
+        </NavigationContainer>
+    </Provider>
 );
