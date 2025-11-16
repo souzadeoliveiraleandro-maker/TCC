@@ -5,7 +5,9 @@ const initialState = {
     isAuthenticated: false,
     name: '',
     email: '',
-    isAdmin: false, // 🔑 O status de permissão que controlará o FAB
+    isAdmin: false,
+    nickname: '',
+    // 🔑 O status de permissão que controlará o FAB
 };
 
 const userSlice = createSlice({
@@ -18,6 +20,7 @@ const userSlice = createSlice({
             state.name = action.payload.name;
             state.email = action.payload.email;
             state.isAdmin = action.payload.isAdmin || false; 
+            state.nickname = action.payload.nickname;
         },
         logout: (state) => {
             return initialState; // Limpa o estado
@@ -28,6 +31,7 @@ const userSlice = createSlice({
             state.name = action.payload.name;
             state.email = action.payload.email;
             state.isAdmin = action.payload.isAdmin || false;
+            state.nickname = action.payload.nickname;
         }
     },
 });

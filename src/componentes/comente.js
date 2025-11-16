@@ -1,3 +1,4 @@
+// /src/componentes/Comente.js
 import react, { Component } from "react"
 import { View, Text, StyleSheet} from "react-native"
 
@@ -7,9 +8,10 @@ class Comente extends Component {
         if (this.props.comments){
             view = this.props.comments.map((item, index) => {
                 return(
-                    <View style={StyleSheet.commentsContainer} key={index}>
+                    <View style={styles.comenteContainer} key={index}>
                         <Text style={styles.nickname}> {item.nickname}</Text>
-                        <Text style={styles.comente}> {item.comments}</Text>
+                        {/* 🔑 Usando item.comment, que é o campo que definimos no Redux */}
+                        <Text style={styles.comment}> {item.comment}</Text> 
                     </View>
                 )
             })
@@ -34,10 +36,10 @@ const styles = StyleSheet.create({
     nickname: {
         marginLeft: 5,
         fontWeight: 'bold',
-        color: '#fdf8f8ff'
+        color: '#444' // Cor escura para melhor contraste
     },
-    comente: {
-        color: '#faf6f6ff'
+    comment: { // Renomeado de 'comente' para 'comment'
+        color: '#555' // Cor escura para melhor contraste
     }
 })
 

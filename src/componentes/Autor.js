@@ -1,15 +1,18 @@
+// /src/componentes/Autor.js
 import React from 'react'
-import { View, Text, StyleSheet }   from 'react-native'
+import { View, Text, StyleSheet  } from 'react-native'
 import { Gravatar } from 'react-native-gravatar'
 
 export default props => {
     return (
-        <View>
+        <View style={styles.container}> // 🔑 Adicionado o estilo container
             <Gravatar options={{
                 email: props.email, secure: true
-            }}  
-                style={StyleSheet.avatar}/>
-            <Text style={StyleSheet.nickname}>{props.nickname}</Text>
+            }}  
+            // ❌ Corrigido: Usar `styles.avatar`
+            style={styles.avatar}/> 
+            {/* ❌ Corrigido: Usar `styles.nickname` */}
+            <Text style={styles.nickname}>{props.nickname}</Text> 
         </View>
     )
 }

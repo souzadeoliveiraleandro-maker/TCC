@@ -8,7 +8,7 @@ class Header extends Component {
             <View style={Styles.container}>
                 <View style={Styles.rowContainer}>
                     <Image source={icon} style={Styles.Image}/>
-                    <Text style={Styles.title}>Communit</Text>
+                    <Text style={Styles.title}>Feed</Text>
                 </View>
             </View>
         )
