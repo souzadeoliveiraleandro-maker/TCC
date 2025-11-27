@@ -1,125 +1,107 @@
-// /src/componentes/AdicionarComentario.js
-import React, { Component } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableWithoutFeedback as TWF, Alert } from "react-native"
-import Icon from 'react-native-vector-icons/FontAwesome'; 
-import { connect } from 'react-redux';
-// Ajuste o caminho se postsSlice.js não estiver em ../../redux/slices/
-import { addComment } from '../../src/redux/slices/postsSlices'; 
+import React, { useState } from 'react';
+import { 
+    View, 
+    TextInput, 
+    TouchableOpacity, 
+    StyleSheet, 
+    ActivityIndicator,
+    Alert 
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { saveComment } from '../redux/slices/postsSlices'; // 🔑 Importa o Thunk de Comentário
 
-class AdicionarComentario extends Component {
-    state = {
-        comment: '',
-        editMode: false,
-    };
-
-    HandleAddComentario = () => {
-        if (!this.state.comment.trim()) {
-            return Alert.alert('Erro', 'O comentário não pode estar vazio.');
-        }
-
-        if (!this.props.name) {
-            return Alert.alert('Erro', 'Você deve estar logado para comentar.');
-        }
-
-        const newComment = {
-            nickname: this.props.name,
-            comment: this.state.comment.trim(),
-        };
-
-        this.props.onAddComment({ 
-            postId: this.props.postId, 
-            comment: newComment 
-        });
-
-        this.setState({ comment: '', editMode: false });
-    }
-
-    render() {
-        const isLogged = this.props.name != null; 
-        let commentsNaArea = null;
-
-        if (isLogged) {
-            if (this.state.editMode) {
-                commentsNaArea = (
-                    <View style={styles.container}>
-                        <TextInput
-                            placeholder='Pode comentar...'
-                            style={styles.input}
-                            autoFocus={true}
-                            value={this.state.comment}
-                            onChangeText={comment => this.setState({ comment })}
-                            onSubmitEditing={this.HandleAddComentario}
-                        />
-                        <TWF onPress={() => this.setState({ editMode: false, comment: '' })}>
-                            <Icon name='times' size={15} color='#555' />
-                        </TWF>
-                    </View>
-                );
-            } else {
-                commentsNaArea = (
-                    <TWF onPress={() => this.setState({ editMode: true })}>
-                        <View style={styles.container}> 
-                            <Icon name='comment-o' size={20} color='#999' />
-                            <Text style={styles.caption}>
-                                Adicionar comentário como **{this.props.name}**...
-                            </Text>
-                        </View>
-                    </TWF>
-                );
-            }
-        } else {
-            commentsNaArea = (
-                <View style={styles.container}>
-                    <Icon name='comment-o' size={20} color='#999' />
-                    <Text style={styles.caption}>
-                        Faça login para comentar.
-                    </Text>
-                </View>
-            );
-        }
-
-        return (
-            <View style={{ width: '100%', paddingHorizontal: 10, backgroundColor: '#eef' }}>
-                {commentsNaArea}
-            </View>
-        );
-    }
-}
-
-// 🔑 DEFINIÇÃO NECESSÁRIA ANTES DE connect:
+// ------------------------------------------------------------------
+// 1. DEFINIÇÃO DO STYLES
+// ------------------------------------------------------------------
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 10,
-        paddingHorizontal: 10,
-    },
-    caption: {
-        marginLeft: 10,
-        fontSize: 12,
-        color: '#999',
+        padding: 10,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
     },
     input: {
-        width: '90%',
-        padding: 5,
+        flex: 1,
         borderWidth: 1,
         borderColor: '#ccc',
-        borderRadius: 5,
-        backgroundColor: '#fff'
-    }
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        marginRight: 10,
+        fontSize: 14,
+    },
+    button: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#4CAF50',
+        borderRadius: 20,
+        width: 70,
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
 });
 
-// 🔑 DEFINIÇÃO NECESSÁRIA ANTES DE connect:
-const mapStateToProps = ({ user }) => {
-    return {
-        name: user.nickname, 
-    };
-};
+// ------------------------------------------------------------------
+// 2. O COMPONENTE DE INPUT DE COMENTÁRIO
+// ------------------------------------------------------------------
+export default function AdcionarComente({ postId }) {
+    const dispatch = useDispatch();
+    const [commentText, setCommentText] = useState('');
+    const [isSending, setIsSending] = useState(false);
 
-const mapDispatchToProps = dispatch => {
-    return {
-        onAddComment: payload => dispatch(addComment(payload)), 
-    };
-};
+    // O Thunk saveComment usa o estado do usuário (token) para autenticar
+    // e o estado de posts para saber se já há outro post sendo enviado
+    const { loading: postsLoading } = useSelector(state => state.posts);
 
-export default connect(mapStateToProps, mapDispatchToProps)(AdicionarComentario);
+    const handleSendComment = () => {
+        if (!commentText.trim()) return; // Ignora comentários vazios
+
+        setIsSending(true);
+
+        // 🚀 DISPATCH DO THUNK: Envia o comentário para a rota protegida
+        dispatch(saveComment({ 
+            postId: postId,
+            text: commentText.trim() 
+        }))
+            .unwrap()
+            .then(() => {
+                // Sucesso: O comentário já foi adicionado ao array local (postsSlices)
+                setCommentText(''); // Limpa o input
+            })
+            .catch((backendError) => {
+                Alert.alert('Erro', backendError || 'Falha ao enviar comentário. Tente novamente.');
+            })
+            .finally(() => {
+                setIsSending(false);
+            });
+    };
+
+    const isDisabled = isSending || postsLoading;
+
+    return (
+        <View style={styles.container}>
+            <TextInput
+                style={styles.input}
+                placeholder="Adicione um comentário..."
+                placeholderTextColor="#999"
+                value={commentText}
+                onChangeText={setCommentText}
+                editable={!isDisabled}
+            />
+            <TouchableOpacity
+                style={styles.button}
+                onPress={handleSendComment}
+                disabled={isDisabled}
+            >
+                {isDisabled ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                    <Text style={styles.buttonText}>Enviar</Text>
+                )}
+            </TouchableOpacity>*//
+        </View>
+    );
+}

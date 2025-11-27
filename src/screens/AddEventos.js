@@ -1,248 +1,214 @@
-import React, { Component } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Dimensions, Platform, ScrollView, Alert } from 'react-native';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker'; 
+import React, { useState } from "react";
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    TouchableOpacity, 
+    TextInput, 
+    Alert,
+    ActivityIndicator,
+    Image // Para pré-visualizar a imagem
+} from "react-native";
 import { useNavigation } from '@react-navigation/native'; 
+import { useDispatch, useSelector } from 'react-redux';
+import { saveEvent } from '../redux/slices/eventos.Slices'; // 🔑 Importa o Thunk
+import { launchImageLibrary } from 'react-native-image-picker'; // ✅ Importar a função da galeria
 
-// 🔑 IMPORTAÇÕES REDUX
-import { connect } from 'react-redux';
-// ✅ CORREÇÃO: Usando o nome do arquivo que você confirmou: eventos.Slices
-import { addEvent } from '../redux/slices/eventos.Slices'; 
+// ------------------------------------------------------------------
+// 1. DEFINIÇÃO DO STYLES
+// ------------------------------------------------------------------
+const styles = StyleSheet.create({
+    container:{
+        flex:1,
+        padding: 20,
+        backgroundColor: '#f5f5f5', 
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center'
+    },
+    imagePreview: {
+        width: '100%',
+        height: 200,
+        backgroundColor: '#ccc',
+        marginBottom: 15,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    input: {
+        width: '100%',
+        padding: 15,
+        borderWidth: 1, 
+        borderColor: '#ccc', 
+        backgroundColor: '#fff', 
+        minHeight: 50, 
+        borderRadius: 8, 
+        fontSize: 16,
+        marginBottom: 15,
+    },
+    multilineInput: {
+        minHeight: 100,
+        textAlignVertical: 'top'
+    },
+    button: {
+        marginTop: 20,
+        padding: 15, 
+        backgroundColor: '#FFC107', 
+        borderRadius: 8, 
+        alignItems: 'center',
+    },
+    buttonText: { 
+        fontSize: 20,
+        color: '#000',
+        fontWeight: 'bold',
+    },
+});
 
-const initialImage = { uri: 'https://via.placeholder.com/300x225.png?text=Capa+do+Evento' };
+// ------------------------------------------------------------------
+// 2. O COMPONENTE DE CRIAÇÃO DE EVENTO
+// ------------------------------------------------------------------
+export default function CriarEventoScreen() {
+    const navigation = useNavigation(); 
+    const dispatch = useDispatch(); 
+    const { loading: eventsLoading } = useSelector(state => state.events); 
 
-class AddEvento extends Component {
-     state = {
-         title: '',
-         date: '', 
-         location: '',
-         description: '', 
-         image: initialImage,
-     }
-     
-     options = {
-         mediaType: 'photo',
-         quality: 1, 
-         includeBase64: true, 
-         maxHeight: 600,
-         maxWidth: 800,
-     };
+    const [title, setTitle] = useState('');
+    const [date, setDate] = useState('');
+    const [image, setImage] = useState(null); // ✅ Alterado para armazenar o objeto da imagem
+    const [location, setLocation] = useState(''); // ✅ 1. Novo estado para o local
+    const [description, setDescription] = useState(''); 
+    
+    const [isSending, setIsSending] = useState(false);
 
-     selectImageSource = () => {
-         Alert.alert(
-                    "Selecione a Capa do Evento",
-                    "De onde você quer selecionar a imagem?",
-                    [
-                            { text: "Câmera", onPress: () => this.launchCamera() },
-                            { text: "Galeria", onPress: () => this.launchGallery() },
-                            { text: "Cancelar", style: "cancel" }
-                    ]
-         );
-     };
-
-     launchCamera = () => {
-         launchCamera(this.options, this.handleResponse);
-     };
-
-     launchGallery = () => {
-         launchImageLibrary(this.options, this.handleResponse);
-     };
-     
-     handleResponse = (response) => {
-         if (response.didCancel) {      
-                    console.log('Seleção cancelada pelo usuário');
-         } else if (response.errorCode) {
-                    console.log('ImagePicker Error: ', response.errorCode);
-                    Alert.alert('Erro', `Falha ao selecionar imagem: ${response.errorMessage}`);
-         } else if (response.assets && response.assets.length > 0) {
-                    const asset = response.assets[0];
-                    this.setState({
-                            image: { uri: asset.uri, base64: asset.base64 },
-                    });
-         }
-     };
-
-     // 💡 Método save agora despacha a ação Redux
-     save = async () => {
-         const { title, date, location, description, image } = this.state;
-        // 🔑 Obtendo a action e o nickname das props injetadas pelo Redux
-        const { nickname, onAddEvent } = this.props; 
-        
-         if (title.trim() === '' || date.trim() === '' || location.trim() === '' || description.trim() === '') {
-                    Alert.alert('Atenção', 'Por favor, preencha todos os campos do evento.');
-                    return;
-         }
-         
-         if (image.uri === initialImage.uri) {
-                    Alert.alert('Atenção', 'Por favor, selecione uma capa para o evento.');
-                    return;
-         }
-
-        // 1. Constrói o objeto do evento
-        const newEvent = {
-            id: Math.random().toString(), 
-            title,
-            date,
-            location,
-            description,
-            creator: nickname || 'Admin', // Usa o nickname injetado
-            imageURL: image.uri, 
+    // ✅ Função para abrir a galeria e selecionar a imagem
+    const handleSelectImage = () => {
+        const options = {
+            mediaType: 'photo',
+            quality: 0.8,
+            includeBase64: false,
         };
 
-        // 2. Despacha a ação para o Redux Store
-        onAddEvent(newEvent); // 🔑 ESTA LINHA É CRÍTICA!
+        launchImageLibrary(options, (response) => {
+            if (response.didCancel) {
+                console.log('Seleção de imagem cancelada');
+            } else if (response.errorCode) {
+                Alert.alert('Erro', `Falha ao selecionar imagem: ${response.errorMessage}`);
+            } else if (response.assets && response.assets.length > 0) {
+                // Armazena o objeto completo do asset da imagem
+                setImage(response.assets[0]);
+            }
+        });
+    };
 
-         Alert.alert('Sucesso!', `O evento "${title}" foi criado e adicionado à lista.`);
+    // 🔑 FUNÇÃO PRINCIPAL: Chama o Thunk saveEvent
+    const handleSaveEvent = () => {
+        // ✅ 2. Validação atualizada para incluir o local
+        if (!title || !date || !image || !location || !description) {
+            Alert.alert('Atenção', 'Todos os campos, incluindo imagem e local, são obrigatórios.');
+            return;
+        }
+
+        setIsSending(true);
+
+        // ✅ 3. Formata a data para o padrão do banco de dados (yyyy-MM-dd hh:mm:ss)
+        // Adiciona os segundos se o usuário não os digitou.
+        const formattedDate = date.length === 16 ? `${date}:00` : date;
         
-         // 3. Retorna para a tela de Eventos
-         this.props.navigation.goBack(); 
-     }
-
-     render () {
-         return (
-                    <ScrollView contentContainerStyle={styles.scrollContainer}>
-                            <Text style={styles.title}>Criar Novo Evento</Text>
-                            
-                            {/* Título do Evento */}
-                            <TextInput placeholder='Título do Evento'
-                              style={styles.input}
-                              placeholderTextColor='#000'
-                              value={this.state.title}
-                              onChangeText={title => this.setState({title})}
-                            />
-                            
-                            {/* Data do Evento */}
-                            <TextInput placeholder='Data (Ex: 10/Dez/2025)'
-                              style={styles.input}
-                              placeholderTextColor='#000'
-                              value={this.state.date}
-                              onChangeText={date => this.setState({date})}
-                            />
-
-                            {/* Local do Evento */}
-                            <TextInput placeholder='Local / Endereço'
-                              style={styles.input}
-                              placeholderTextColor='#000'
-                              value={this.state.location}
-                              onChangeText={location => this.setState({location})}
-                            />
-
-                            {/* Descrição do Evento */}
-                            <TextInput placeholder='Descrição detalhada do evento'
-                              style={[styles.input, styles.textArea]}
-                              placeholderTextColor='#000'
-                              multiline={true}
-                              numberOfLines={4}
-                              value={this.state.description}
-                              onChangeText={description => this.setState({description})}
-                            />
-
-                            {/* Imagem de Capa */}
-                            <Text style={styles.imageLabel}>Capa do Evento</Text>
-                            <View style={styles.imageContainer}>
-                              <Image source={this.state.image} style={styles.image}/>
-                            </View>
-                            
-                            <TouchableOpacity onPress={this.selectImageSource} style={styles.button}>
-                              <Text style={styles.buttonText}>Escolher Capa</Text>
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity onPress={this.save} style={styles.button}>
-                              <Text style={styles.buttonText}>Salvar Evento</Text>
-                            </TouchableOpacity>
-                    </ScrollView>
-         )
-     }
-}
-
-const styles = StyleSheet.create({
-     scrollContainer: {
-         alignItems: 'center',
-         paddingVertical: 20,
-         paddingBottom: 50,
-         backgroundColor: '#fff',
-     },
-     title : {
-         fontSize: 24,
-         marginTop: 10,
-         fontWeight: 'bold',
-         marginBottom: 20,
-     },
-     imageContainer: {
-         width: '90%',
-         height: Dimensions.get('window').width * 0.5, 
-         backgroundColor: '#eee',
-         marginTop: 10,
-         borderWidth: 1, 
-         borderColor: '#ccc',
-         overflow: 'hidden',
-     },
-     image: {
-         width: '100%',
-         height: '100%',
-         resizeMode: 'cover' 
-     },
-     imageLabel: {
-         marginTop: 20,
-         fontSize: 16,
-         alignSelf: 'flex-start',
-         marginLeft: '5%',
-         fontWeight: 'bold',
-     },
-     button: { 
-         marginTop: 30,
-         padding: 10,
-         backgroundColor: '#4286f4',
-         minWidth: 180, 
-         alignItems: 'center',
-         borderRadius: 5,
-     },
-     buttonText: {
-         color: '#fff',
-         fontWeight: 'bold',
-     },
-     input: {
-         marginTop: 15,
-         width: '90%',
-         height: 50, 
-         borderColor: '#ccc',
-         borderWidth: 1,
-         borderRadius: 5,
-         paddingHorizontal: 15,
-         backgroundColor: '#f9f9f9',
-     },
-     textArea: {
-         height: 100,
-         textAlignVertical: 'top', 
-         paddingTop: 10,
-     }
-})
-
-// ------------------------------------------------------------------
-// 🔑 Conexão Redux e Navegação (Novo Wrapper)
-// ------------------------------------------------------------------
-
-// 1. Mapeia o estado do Redux para as props (apenas o nickname do usuário)
-const mapStateToProps = ({ user }) => {
-    return {
-        nickname: user.nickname,
+        // 🚀 DISPATCH DO THUNK: Envia os dados (incluindo o objeto da imagem)
+        dispatch(saveEvent({ 
+            title: title, 
+            date: formattedDate, // Envia a data formatada
+            image: image, // ✅ Envia o objeto da imagem
+            localizacao: location, // ✅ CORREÇÃO: Enviando com a chave correta para o Thunk
+            description: description,
+        }))
+            .unwrap()
+            .then(() => {
+                // Sucesso: O Redux foi sinalizado.
+                Alert.alert('Sucesso!', 'Evento agendado com sucesso!');
+                // Usamos um setTimeout para garantir que a navegação ocorra após
+                // a renderização do estado do Redux, evitando a condição de corrida.
+                setTimeout(() => {
+                    navigation.goBack(); 
+                }, 100);
+            })
+            .catch((backendError) => {
+                // Falha: Exibe o erro
+                Alert.alert('Erro ao Agendar', backendError || 'Não foi possível agendar o evento.');
+            })
+            .finally(() => {
+                setIsSending(false);
+            });
     };
-};
+    
+    const finalLoading = eventsLoading || isSending;
 
-// 2. Mapeia a action do Redux para as props
-const mapDispatchToProps = dispatch => {
-    return {
-        // Agora você pode chamar this.props.onAddEvent(newEvent)
-        onAddEvent: event => dispatch(addEvent(event)),
-    };
-};
+    return(
+        <View style={styles.container}> 
+            <Text style={styles.title}>Agendar Novo Evento</Text>
 
-// 3. Conecta a classe AddEvento ao Redux
-const AddEventoWrapped = connect(mapStateToProps, mapDispatchToProps)(AddEvento);
+            {/* ✅ Área de pré-visualização que também é um botão */}
+            <TouchableOpacity style={styles.imagePreview} onPress={handleSelectImage} disabled={finalLoading}>
+                {image?.uri ? (
+                    <Image 
+                        source={{ uri: image.uri }} 
+                        style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <Text style={{ color: '#666' }}>Clique aqui para escolher uma imagem</Text>
+                )}
+            </TouchableOpacity>
 
-// 4. Wrapper HOC para injetar navegação
-function AddEventoWithNavigation(props) {
-     const navigation = useNavigation();
-     return <AddEventoWrapped {...props} navigation={navigation} />;
+            <TextInput 
+                placeholder="Título do Evento" 
+                style={styles.input}
+                placeholderTextColor='#666'
+                value={title}
+                onChangeText={setTitle}
+                editable={!finalLoading}
+            />
+            <TextInput 
+                placeholder="Data e Hora (Ex: 2024-12-31 18:00)" 
+                style={styles.input}
+                placeholderTextColor='#666'
+                value={date}
+                onChangeText={setDate}
+                editable={!finalLoading}
+            />
+            {/* ✅ 4. Novo campo de texto para o Local do Evento */}
+            <TextInput 
+                placeholder="Local do Evento (Ex: Online, Auditório Principal)" 
+                style={styles.input}
+                placeholderTextColor='#666'
+                value={location}
+                onChangeText={setLocation}
+                editable={!finalLoading}
+            />
+            <TextInput 
+                placeholder="Descrição Detalhada do Evento" 
+                style={[styles.input, styles.multilineInput]}
+                placeholderTextColor='#666'
+                multiline={true}
+                value={description}
+                onChangeText={setDescription}
+                editable={!finalLoading}
+            />
+            
+            <TouchableOpacity 
+                onPress={handleSaveEvent} 
+                style={styles.button}
+                disabled={finalLoading}
+            > 
+                {finalLoading ? (
+                    <ActivityIndicator color="#000" />
+                ) : (
+                    <Text style={styles.buttonText}>Agendar Evento</Text>
+                )}
+            </TouchableOpacity>
+        </View>
+    );
 }
-
-export default AddEventoWithNavigation;

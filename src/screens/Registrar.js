@@ -1,183 +1,209 @@
-import React, { Component } from "react"; 
-import { View, Text, StyleSheet,TouchableOpacity, TextInput, Alert, ScrollView } from "react-native";
-// 🔑 Importações necessárias
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch } from 'react-redux'; 
-import { loginSuccess } from '../../src/redux/slices/userSlices'
+import React, { useState } from "react";
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    TouchableOpacity, 
+    TextInput, 
+    Alert,
+    ActivityIndicator,
+    KeyboardAvoidingView, // Para evitar que o teclado esconda inputs
+    Platform,
+    ScrollView 
+} from "react-native";
+import { useNavigation } from '@react-navigation/native'; 
+import { useDispatch, useSelector } from 'react-redux';
+import { signUpUser } from '../redux/slices/userSlices'; 
 
 // ------------------------------------------------------------------
-// 1. A CLASSE Register (AGORA CHAMA A PROPS onRegister)
+// COMPONENTE DE REGISTRO
 // ------------------------------------------------------------------
-class Registrar extends Component{ 
-    state = {
-        nome: '',
-        sobrenome: '',
-        email: '',
-        password: '',
-        cpf: '',
-        datanacimento: '',
-        numerocelular: '',
-        confirmPassword: ''
-    } 
-    
-    // 🔑 NOVA FUNÇÃO: Chama a prop onRegister injetada pelo wrapper
-    register = () => {
-        const { nome, email, password, confirmPassword } = this.state;
+export default function RegistroScreen() {
+    const navigation = useNavigation(); 
+    const dispatch = useDispatch(); 
+    // Certifique-se de que a fatia (slice) do Redux está correta, geralmente 'user'
+    const { loading, error } = useSelector(state => state.user || { loading: false, error: null }); 
 
-        if (password !== confirmPassword) {
-            Alert.alert("Erro", "As senhas não coincidem.");
+    const [name, setName] = useState('');
+    const [nickname, setNickname] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleRegister = () => {
+        // Remove espaços em branco antes de validar
+        const trimmedEmail = email.trim();
+        const trimmedNickname = nickname.trim();
+        const trimmedName = name.trim();
+        const trimmedPassword = password.trim();
+
+
+        if (!trimmedName || !trimmedNickname || !trimmedEmail || !trimmedPassword) {
+            Alert.alert('Atenção', 'Preencha todos os campos obrigatórios.');
             return;
         }
 
-        // ⚠️ Aqui seria o local para fazer a chamada à API/Firebase para criar a conta.
-        // Se a chamada for bem-sucedida, o wrapper chama o login automático.
-        this.props.onRegister({
-            nome,
-            email,
-            password,
-            // ... outros campos
-        });
-    }
-
-    render (){
-        return( 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>     
-                <Text style={styles.header}>Criar Nova Conta</Text>
-
-                <TextInput placeholder="Nome:" style={styles.input} placeholderTextColor='#333'
-                value={this.state.nome}
-                onChangeText={nome => this.setState({nome})} /> 
-                
-                <TextInput placeholder="Sobrenome:" style={styles.input} placeholderTextColor='#333'
-                value={this.state.sobrenome}
-                onChangeText={sobrenome => this.setState({sobrenome})} />
-                
-                <TextInput placeholder="Email:" style={styles.input} placeholderTextColor='#333'
-                keyboardType="email-address"
-                value={this.state.email}
-                onChangeText={email => this.setState({email})} />
-                
-                <TextInput placeholder="Senha:" style={styles.input} placeholderTextColor='#333'
-                secureTextEntry={true} value={this.state.password}  
-                onChangeText={password => this.setState({password})} />
-                
-                <TextInput placeholder="Confirmar Senha:" style={styles.input} placeholderTextColor='#333'
-                secureTextEntry={true} value={this.state.confirmPassword}
-                onChangeText={confirmPassword => this.setState({confirmPassword})} />
-                
-                <TextInput placeholder="CPF:" style={styles.input} placeholderTextColor='#333'        
-                value={this.state.cpf}
-                onChangeText={cpf => this.setState({cpf})} />
-                
-                <TextInput placeholder="Data de Nascimento:" style={styles.input} placeholderTextColor='#333'    
-                value={this.state.datanacimento}
-                onChangeText={datanacimento => this.setState({datanacimento})} />
-                
-                <TextInput placeholder="Número de Celular:" style={styles.input} placeholderTextColor='#333'
-                value={this.state.numerocelular}
-                onChangeText={numerocelular => this.setState({numerocelular})} />
-                
-                {/* 🔑 CHAMADA AO NOVO MÉTODO register */}
-                <TouchableOpacity onPress={this.register} style={styles.Button}>  
-                    <Text style={styles.ButtonText}>Cadastrar</Text>
-                </TouchableOpacity> 
-
-                <TouchableOpacity 
-                    onPress={ () => this.props.navigation.navigate('Login') } 
-                    style={styles.backButton}>
-                    <Text style={styles.backButtonText}>Já tenho conta...</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        )
-    }  
-}
-
-// ------------------------------------------------------------------
-// 2. O WRAPPER QUE INJETA REDUX E NAVEGAÇÃO
-// ------------------------------------------------------------------
-function RegistrarWithRedux(props) {
-    const navigation = useNavigation();
-    const dispatch = useDispatch();
-
-    // 🔑 FUNÇÃO DE REGISTRO E LOGIN AUTOMÁTICO
-    const handleReduxRegister = (userData) => {
-        // --- SIMULAÇÃO: Registro bem-sucedido na API ---
-        Alert.alert("Sucesso", "Cadastro realizado com sucesso! Você será logado automaticamente.");
-        
-        // 🔑 DISPATCH: Faz o login automático do novo usuário
-        const newUserData = {
-            token: 'NEW_USER_TOKEN', // Token gerado pelo backend
-            name: userData.nome,
-            email: userData.email,
-            isAdmin: false, // Novos usuários são sempre padrão
-        };
-
-        dispatch(loginSuccess(newUserData));
-
-        // Navega para a parte autenticada do app
-        navigation.navigate('App');
+        // 🚀 DISPATCH DO THUNK: Envia os dados limpos
+        dispatch(signUpUser({ 
+            name: trimmedName, 
+            nickname: trimmedNickname, 
+            email: trimmedEmail, 
+            password: trimmedPassword 
+        }))
+            .unwrap()
+            .then(() => {
+                // Navegar para outra tela ou mostrar sucesso
+                Alert.alert('Sucesso!', 'Seu registro foi concluído. Faça login agora.');
+                navigation.navigate('Login');
+            })
+            .catch((backendError) => {
+                // O erro deve ser a mensagem que o back-end retornou
+                // Usamos o 'error' do Redux para exibir a mensagem na UI
+                // O Thunk deve garantir que 'backendError' é uma string
+                Alert.alert('Erro no Registro', backendError || 'Falha na comunicação com o servidor.');
+            });
     };
 
-    // 🔑 Injeta a navegação e a nova função de registro
-    return <Registrar 
-        {...props} 
-        navigation={navigation}
-        onRegister={handleReduxRegister} // Injeta a função que contém o Dispatch
-    />;
+    return(
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.fullScreen}
+        >
+            <ScrollView contentContainerStyle={styles.container}>
+                <Text style={styles.title}>Criar Nova Conta</Text>
+
+                <TextInput 
+                    placeholder="Nome Completo" 
+                    style={styles.input}
+                    placeholderTextColor='#A0A0A0'
+                    value={name}
+                    onChangeText={setName}
+                    editable={!loading}
+                />
+                <TextInput 
+                    placeholder="Nickname (Usuário)" 
+                    style={styles.input}
+                    placeholderTextColor='#A0A0A0'
+                    value={nickname}
+                    onChangeText={setNickname}
+                    autoCapitalize="none"
+                    editable={!loading}
+                />
+                <TextInput 
+                    placeholder="Email" 
+                    style={styles.input}
+                    placeholderTextColor='#A0A0A0'
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                    editable={!loading}
+                />
+                <TextInput 
+                    placeholder="Senha" 
+                    style={styles.input}
+                    placeholderTextColor='#A0A0A0'
+                    secureTextEntry={true} 
+                    value={password}
+                    onChangeText={setPassword}
+                    editable={!loading}
+                />
+                
+                <TouchableOpacity 
+                    onPress={handleRegister} 
+                    style={[styles.button, loading && styles.buttonDisabled]}
+                    disabled={loading} 
+                > 
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.buttonText}>Registrar</Text>
+                    )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                    onPress={() => navigation.navigate('Login')} 
+                    style={styles.textLink}
+                    disabled={loading}
+                > 
+                    <Text style={styles.textLinkText}>Já tenho conta</Text>
+                </TouchableOpacity>
+                
+                {/* Exibe o erro vindo do Redux, que é a mensagem do Back-end */}
+                {error && !loading && (
+                    <Text style={styles.errorText}>Erro: {error}</Text>
+                )}
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
 }
 
-// ------------------------------------------------------------------
-// 3. ESTILOS ATUALIZADOS
-// ------------------------------------------------------------------
-const styles = StyleSheet.create({ 
-    container:{ 
-        flexGrow: 1, // Permite ScrollView
+const styles = StyleSheet.create({
+    fullScreen: {
+        flex: 1,
+        backgroundColor: '#1E1E2F', // Fundo escuro
+    },
+    container: {
+        flexGrow: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 40,
-        backgroundColor: '#f5f5f5',
+        padding: 20,
     },
-    header: {
-        fontSize: 26,
+    title: {
+        fontSize: 30,
         fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#333',
+        color: '#FFFFFF', // Título branco
+        marginBottom: 30,
     },
-    Button:{    
-        marginTop:30,
-        paddingHorizontal: 25,
-        paddingVertical: 12,
-        backgroundColor: '#4286f4',
-        borderRadius: 8,
-        elevation: 3,
-    },
-    ButtonText:{     
-        fontSize: 20,
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    input:{
-        marginTop: 15,
-        width: '90%',
-        backgroundColor: '#fff',
+    input: {
+        width: '100%',
+        maxWidth: 350,
         height: 50,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 5,
-        paddingLeft: 15,
+        backgroundColor: '#3A3A4A', // Fundo do input levemente mais claro
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        color: '#FFFFFF', // Cor do texto digitado
         fontSize: 16,
-        color: '#333'
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#555',
     },
-    backButton: {
-        marginTop: 15,
+    button: {
+        width: '100%',
+        maxWidth: 350,
+        height: 50,
+        backgroundColor: '#00BFFF', // Azul vibrante para ação primária
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 8,
+    },
+    buttonDisabled: {
+        backgroundColor: '#007AA3', // Tom de azul mais escuro quando desabilitado
+    },
+    buttonText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    textLink: {
+        marginTop: 20,
         padding: 10,
     },
-    backButtonText: {
+    textLinkText: {
+        color: '#FFFFFF', // Texto branco para link
         fontSize: 16,
-        color: '#4286f4',
+        textDecorationLine: 'underline',
+    },
+    errorText: {
+        color: '#FF6347', // Vermelho coral para erros
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 14,
+        paddingHorizontal: 10,
     }
-})
-
-// ------------------------------------------------------------------
-// 4. EXPORTAÇÃO FINAL
-// ------------------------------------------------------------------
-export default RegistrarWithRedux;
+});

@@ -1,59 +1,134 @@
-// /src/Feed.js
-import React, { Component } from "react";
-import { StyleSheet, FlatList, View, TouchableOpacity, Text } from "react-native";
-// 🔑 Importações Redux e Navigation
-import { connect } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect } from "react";
+import { 
+    StyleSheet, 
+    FlatList, 
+    View, 
+    Text, 
+    TouchableOpacity, 
+    ActivityIndicator, 
+    RefreshControl 
+} from "react-native";
+import { useDispatch, useSelector } from 'react-redux'; // 🔑 Hooks do Redux
+import { useNavigation, useIsFocused } from '@react-navigation/native'; // ✅ Adicionado useIsFocused
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import Post from "../componentes/Post";
+import { loadPosts, resetPostAdded } from "../redux/slices/postsSlices"; // ✅ Importa o novo reducer
 
-// Componente de Classe Pura para o Feed
-class Feed extends Component{
-    // ❌ REMOVER: O estado agora está no Redux
-    /* state = { posts: [...] } */
+// ------------------------------------------------------------------
+// 1. O COMPONENTE PRINCIPAL DO FEED (FUNCIONAL)
+// ------------------------------------------------------------------
+export default function FeedScreen() { // Renomeado para seguir o padrão Screen
+    const navigation = useNavigation();
+    const dispatch = useDispatch();
+    const isFocused = useIsFocused(); // ✅ Hook para saber se a tela está em foco
+    const [initialLoadAttempted, setInitialLoadAttempted] = React.useState(false); // ✅ Novo estado para controlar o carregamento inicial
+    
+    // 🔑 Pega o estado do Redux: array de posts, loading e erro
+    const { posts, loading: reduxLoading, error, postAdded } = useSelector(state => state.posts); // ✅ Pega o novo estado 'postAdded'
+    const [refreshing, setRefreshing] = React.useState(false);
 
-    // 🔑 NOVO: Configura o botão do Header para navegar para a tela de Adicionar Post
-    componentDidMount() {
-        this.setNavigationOptions();
-    }
+    // Função para buscar posts (usada no refresh e na montagem)
+    const fetchPosts = React.useCallback(() => { // ✅ Usar useCallback para otimização
+        if (reduxLoading) return; // Evita múltiplas chamadas se já estiver carregando
+        setRefreshing(true);
+        // Despacha o Thunk e garante que o loading seja desativado, independente do resultado
+        dispatch(loadPosts()).finally(() => {
+            setRefreshing(false);
+            setInitialLoadAttempted(true); // ✅ Marca que a tentativa de carregamento inicial foi feita
+        });
+    }, [dispatch, reduxLoading]);
+ 
+    // ✅ useEffect 1: Responsável APENAS pelo carregamento inicial dos posts.
+    useEffect(() => {
+        // Busca os posts apenas se a tela estiver em foco, a tentativa inicial não foi feita e não há posts.
+        if (isFocused && !initialLoadAttempted && posts.length === 0) {
+            fetchPosts();
+        }
+    }, [isFocused, initialLoadAttempted, posts.length, fetchPosts]);
 
-    setNavigationOptions = () => {
-        this.props.navigation.setOptions({
+    // ✅ useEffect 2: Responsável APENAS por recarregar o feed após um novo post ser adicionado.
+    useEffect(() => {
+        if (isFocused && postAdded) {
+            // Recarrega a lista de posts para incluir o novo post de forma segura.
+            fetchPosts();
+            // Reseta o sinalizador para não recarregar novamente sem necessidade.
+            dispatch(resetPostAdded());
+        }
+    }, [isFocused, postAdded, dispatch, fetchPosts]); // Dependências mais limpas e focadas.
+     
+    // useLayoutEffect: Configura o botão de adicionar post no cabeçalho
+    React.useLayoutEffect(() => {
+        navigation.setOptions({
             headerRight: () => (
                 <TouchableOpacity 
-                    onPress={() => this.props.navigation.navigate('AddPost')} 
+                    onPress={() => navigation.navigate('AddPost')} // Nome da rota que criamos
                     style={styles.headerButton}
                 >
-                    {/* ℹ️ Assumindo que AddPost é uma tela na sua FeedStack */}
                     <Icon name="plus" size={24} color="#4286f4" />
                 </TouchableOpacity>
             ),
-            title: 'Feed Principal', // Título que definimos no Navigator.js
+            title: 'Feed Principal',
         });
-    }
+    }, [navigation]);
 
-    render(){
-        return(
-            <View style={styles.container}>
-                <FlatList 
-                    data={this.props.posts} // 🔑 Dados vêm das props (Redux)
-                    keyExtractor={item => `${item.id}`} 
-                    renderItem={({item}) => <Post key={item.id} {...item} />}
-                    contentContainerStyle={{paddingBottom: 100}}
-                    ListEmptyComponent={() => (
-                        <Text style={styles.emptyText}>Nenhuma postagem ainda. Crie a primeira!</Text>
-                    )}
-                />
+ 
+    // --------------------------------------------------
+    // Condicionais de Renderização (Loading e Erro)
+    // --------------------------------------------------
+    if ((reduxLoading && posts.length === 0) || (!initialLoadAttempted && posts.length === 0)) { // ✅ Mostra loading se Redux estiver carregando OU se ainda não tentou carregar e não há posts
+        return (
+            <View style={styles.centered}>
+                <ActivityIndicator size="large" color="#4286f4" />
+                <Text style={styles.emptyText}>Carregando feed...</Text>
             </View>
-        )
+        );
     }
+ 
+    return (
+        <View style={styles.container}>
+            <FlatList 
+                data={posts} 
+                keyExtractor={item => `${item.id}`} 
+                // Passa todas as propriedades do item para o componente Post
+                renderItem={({item}) => (
+                    <Post 
+                        key={item.id}
+                        id={item.id}
+                        image_url={item.image_url}
+                        comments={item.comments}
+                        email={item.authorEmail}
+                        name={item.authorNickname}
+                        caption={item.caption} // ✅ CORREÇÃO: Passando a legenda para o componente Post
+                    />
+                )}
+                contentContainerStyle={{paddingBottom: 100}}
+                // Implementa o recurso "Puxar para Atualizar" (Pull to Refresh)
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={fetchPosts} />
+                }
+                ListEmptyComponent={() => (
+                    <Text style={styles.emptyText}>
+                         {error ? `Erro: ${error}` : (initialLoadAttempted ? 'Nenhuma postagem ainda. Crie a primeira!' : 'Carregando...')}
+                    </Text>
+                )}
+            />
+        </View>
+    );
 }
-
+ 
+// ------------------------------------------------------------------
+// 2. STYLES
+// ------------------------------------------------------------------
 const styles = StyleSheet.create({
     container:{
         flex:1,
         backgroundColor: '#F5FCFF'
+    },
+    centered: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
     },
     headerButton: {
         marginRight: 15,
@@ -64,20 +139,5 @@ const styles = StyleSheet.create({
         marginTop: 50,
         fontSize: 16,
         color: '#999',
-    }
+    },
 })
-
-// 🔑 Mapeia o estado do Redux para as propriedades do componente
-const mapStateToProps = ({ posts }) => {
-    return {
-        posts: posts.posts // Acessa o array 'posts' dentro do slice 'posts'
-    }
-}
-
-// 🔑 Wrapper para injetar a navegação e o Redux
-function FeedWithRedux(props) {
-    const navigation = useNavigation();
-    return <Feed {...props} navigation={navigation} />;
-}
-
-export default connect(mapStateToProps)(FeedWithRedux);

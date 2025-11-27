@@ -1,33 +1,31 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native'
 import { Gravatar } from 'react-native-gravatar'
 import { launchImageLibrary } from 'react-native-image-picker' 
 import Icon from 'react-native-vector-icons/FontAwesome'
-import { useNavigation } from '@react-navigation/native' 
 
 // 🔑 IMPORTAÇÕES DO REDUX
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../../src/redux/slices/userSlices'
-
-const initialImage = { uri: 'https://seusite.com/default-avatar.png' }; // Placeholder para foto padrão
+import { logout } from '../../src/redux/slices/userSlices';
 
 // ------------------------------------------------------------------
-// 1. A CLASSE Profile (LÊ DADOS E CHAMA A PROPS onLogout)
+// 1. COMPONENTE FUNCIONAL UNIFICADO
 // ------------------------------------------------------------------
-class Profile extends Component{
-    state = {
-        // O email e a imagem agora são controlados por props injetadas pelo Redux,
-        // mas mantemos 'image' no state se o usuário selecionar uma foto local
-        image: null, 
-    }
+export default function ProfileScreen() {
+    const dispatch = useDispatch();
+    // 🔑 Leitura direta do estado do Redux
+    const user = useSelector(state => state.user);
+    
+    // Estado local apenas para a imagem selecionada
+    const [image, setImage] = useState(null);
 
-    // 🔑 O método logout CHAMA a função onLogout injetada pelo wrapper
-    logout = () => {
-        // onLogout fará o dispatch(logout()) e a navegação
-        this.props.onLogout();
-    }
+    // 🔑 Função de logout simplificada
+    const handleLogout = () => {
+        // Apenas dispara a ação. A navegação é tratada pelo Navigator.js
+        dispatch(logout()); 
+    };
 
-    selectProfilePicture = () => {
+    const selectProfilePicture = () => {
         const options = {
             mediaType: 'photo',
             quality: 0.7,
@@ -37,90 +35,53 @@ class Profile extends Component{
         };
 
         launchImageLibrary(options, (response) => {
-            if (response.didCancel) {
-                console.log('Seleção cancelada');
-            } else if (response.errorCode) {
+            if (response.errorCode) {
                 Alert.alert('Erro', `Falha ao selecionar imagem: ${response.errorMessage}`);
             } else if (response.assets && response.assets.length > 0) {
                 const asset = response.assets[0];
-                this.setState({
-                    image: { uri: asset.uri }, 
-                });
+                setImage({ uri: asset.uri });
             }
         });
-    }
-
-    render(){
-        // 🔑 Lê os dados do usuário a partir das props injetadas pelo Redux
-        const { user } = this.props; 
-
-        // Use valores padrão caso a Store ainda esteja carregando ou o user não exista
-        const userEmail = user.email || 'Não Logado';
-        const userName = user.name || 'Visitante';
-
-        const { image } = this.state;
-        const gravatarOptions = { email: userEmail, secure: true };
-        
-        return(
-            <View style={styles.container}>
-                
-                <TouchableOpacity onPress={this.selectProfilePicture} style={styles.avatarContainer}>
-                    {image ? (
-                        <Image source={image} style={styles.avatar} />
-                    ) : (
-                        <Gravatar options={gravatarOptions} style={styles.avatar} />
-                    )}
-                    <View style={styles.cameraIcon}>
-                        <Icon name="camera" size={20} color="#fff" />
-                    </View>
-                </TouchableOpacity>
-
-                {/* 🔑 EXIBINDO DADOS DO REDUX */}
-                <Text style={styles.nickname}>{userName}</Text>
-                <Text style={styles.email}>{userEmail}</Text>
-
-                <TouchableOpacity onPress={() => Alert.alert('Ação', 'Navegar para Edição de Perfil')} style={styles.editButton}>
-                    <Icon name="pencil" size={18} color="#4286f4" style={{ marginRight: 8 }} />
-                    <Text style={styles.editText}>Editar Perfil</Text>
-                </TouchableOpacity>
-
-                {/* Botão Sair */}
-                <TouchableOpacity onPress={this.logout} style={styles.button}>
-                    <Text style={styles.buttonText}>Sair</Text>
-                </TouchableOpacity>
-            </View>
-        )
-    }  
-}
-
-// ------------------------------------------------------------------
-// 2. O WRAPPER QUE INJETA REDUX E NAVEGAÇÃO
-// ------------------------------------------------------------------
-function ProfileWithRedux(props) {
-    const navigation = useNavigation();
-    const dispatch = useDispatch();
-
-    // 🔑 LEITURA: Obtém o objeto completo do usuário da Store
-    const user = useSelector(state => state.user);
-
-    // 🔑 FUNÇÃO DE LOGOUT: Dispara o Redux Action e navega
-    const handleLogout = () => {
-        // 1. Limpa o estado no Redux
-        dispatch(logout()); 
-        // 2. Navega para a pilha de Autenticação (Login)
-        navigation.navigate('Auth');
     };
 
-    return <Profile 
-        {...props} 
-        navigation={navigation}
-        user={user} // 🔑 Injeta o objeto do usuário completo (incluindo name, email, isAdmin)
-        onLogout={handleLogout} // 🔑 Injeta a função de logout com Redux
-    />;
+    // Use valores padrão para evitar erros se 'user' for nulo
+    const userEmail = user?.email || 'Não Logado';
+    const userName = user?.name || 'Visitante';
+    const gravatarOptions = { email: userEmail, secure: true };
+
+    return (
+        <View style={styles.container}>
+            
+            <TouchableOpacity onPress={selectProfilePicture} style={styles.avatarContainer}>
+                {image ? (
+                    <Image source={image} style={styles.avatar} />
+                ) : (
+                    <Gravatar options={gravatarOptions} style={styles.avatar} />
+                )}
+                <View style={styles.cameraIcon}>
+                    <Icon name="camera" size={20} color="#fff" />
+                </View>
+            </TouchableOpacity>
+
+            {/* 🔑 Exibindo dados do Redux */}
+            <Text style={styles.nickname}>{userName}</Text>
+            <Text style={styles.email}>{userEmail}</Text>
+
+            <TouchableOpacity onPress={() => Alert.alert('Ação', 'Navegar para Edição de Perfil')} style={styles.editButton}>
+                <Icon name="pencil" size={18} color="#4286f4" style={{ marginRight: 8 }} />
+                <Text style={styles.editText}>Editar Perfil</Text>
+            </TouchableOpacity>
+
+            {/* Botão Sair */}
+            <TouchableOpacity onPress={handleLogout} style={styles.button}>
+                <Text style={styles.buttonText}>Sair</Text>
+            </TouchableOpacity>
+        </View>
+    );
 }
 
 // ------------------------------------------------------------------
-// 3. ESTILOS (Inalterados, movidos para o final)
+// 2. ESTILOS (Inalterados)
 // ------------------------------------------------------------------
 const styles = StyleSheet.create({
     container:{
@@ -191,8 +152,3 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     }
 }) 
-
-// ------------------------------------------------------------------
-// 4. EXPORTAÇÃO FINAL
-// ------------------------------------------------------------------
-export default ProfileWithRedux;

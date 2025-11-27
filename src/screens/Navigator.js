@@ -1,12 +1,17 @@
-import React from "react";
+// Arquivo de Navegação (onde está RootStackContent)
+
+import React, { useEffect, useState } from "react"; // ⬅️ Adicionado useState
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { createStackNavigator } from '@react-navigation/stack';
-import { useNavigation, NavigationContainer } from '@react-navigation/native'; 
+import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
+import { NavigationContainer } from '@react-navigation/native'; 
+import { View, ActivityIndicator, StyleSheet } from 'react-native'; 
 
 // 🔑 IMPORTAÇÕES DO REDUX
-import { Provider } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux'; 
 import { store } from '../redux/store'; 
+import { restoreToken } from '../redux/slices/userSlices' 
+
 
 // Componentes das Telas
 import Feed from "./Feed";
@@ -16,19 +21,28 @@ import Registro from "./Registrar";
 import Login from "./Login";
 import Eventos from "./Eventos"; 
 import AddPost from "./AddPost";
-// 🔑 NOVO: Importe a tela de Detalhes
 import EventDetail from "./EventsDetalhe"; 
 
-
-// Definição dos Navegadores
+// 🛑 DEFINIÇÃO DOS NAVEGADORES ATUALIZADA
 const Tab = createBottomTabNavigator();
-const AuthStack = createStackNavigator();
-const RootStack = createStackNavigator();
+const AuthStack = createNativeStackNavigator();
+const FeedStack = createNativeStackNavigator(); 
+const EventosStack = createNativeStackNavigator(); 
+const ProfileStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator(); 
 
-// 🔑 NOVOS Stack Navigators para as abas
-const FeedStack = createStackNavigator(); 
-const EventosStack = createStackNavigator(); 
-const ProfileStack = createStackNavigator();
+// ------------------------------------------------------------------
+// STYLES PARA A TELA DE LOADING
+// ------------------------------------------------------------------
+const styles = StyleSheet.create({
+         loadingScreen: {
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#fff',
+         }
+});
+
 
 // ------------------------------------------------------------------
 // 1. Navegador de Autenticação (Login, Registro)
@@ -53,7 +67,9 @@ function FeedStackScreen() {
                        <FeedStack.Screen 
                             name="FeedHome" 
                             component={Feed} 
-                            options={{ title: 'Feed Principal' }}
+                            options={{ 
+                                     title: 'Feed Principal',
+                            }}
                        />
                        <FeedStack.Screen
                             name="AddPost"
@@ -61,11 +77,10 @@ function FeedStackScreen() {
                             options={{ title: 'Nova Postagem' }}
                        />
               </FeedStack.Navigator>
-
          );
 }
 
-// B. Stack de Eventos (Permite que a tela 'AddEventos' e 'EventDetail' sejam abertas)
+// B. Stack de Eventos
 function EventosStackScreen() {
          return (
               <EventosStack.Navigator screenOptions={{ headerShown: true }}>
@@ -79,16 +94,13 @@ function EventosStackScreen() {
                             component={AddEventos} 
                             options={{ title: 'Criar Evento' }}
                        />
-            
-            {/* 🔑 NOVO: Rota para os detalhes do Evento */}
-            <EventosStack.Screen 
-                name="EventDetail" 
-                component={EventDetail} 
-                // 💡 Define o título da tela dinamicamente com o nome do evento
-                options={({ route }) => ({ 
-                    title: route.params?.event?.title || 'Detalhes do Evento',
-                })}
-            />
+                       <EventosStack.Screen 
+                            name="EventDetail" 
+                            component={EventDetail} 
+                            options={({ route }) => ({ 
+                                     title: route.params?.event?.title || 'Detalhes do Evento',
+                            })}
+                       />
               </EventosStack.Navigator>
          );
 }
@@ -114,19 +126,16 @@ function MenuNavigator() {
               <Tab.Navigator
                        initialRouteName="FeedTab"
                        screenOptions={({ route }) => ({
-                            // 🔑 Desabilita o cabeçalho do Tab Navigator.
-                            // Agora as Stacks internas (FeedStackScreen, etc.) mostrarão o header.
                             headerShown: false, 
                             tabBarShowLabel: true,
                             tabBarActiveTintColor: '#007AFF',
                             tabBarInactiveTintColor: '#555',
-                            // Lógica para definir o ícone
                             tabBarIcon: ({ color, size }) => {
                                      let iconName;
 
-                                     if (route.name === 'FeedTab') { // Usa o nome da Rota Tab
+                                     if (route.name === 'FeedTab') {
                                           iconName = 'home';
-                                     } else if (route.name === 'ProfileTab') { // Usa o nome da Rota Tab
+                                     } else if (route.name === 'ProfileTab') {
                                           iconName = 'user';
                                      } else if (route.name === 'EventosTab') { 
                                           iconName = 'calendar';
@@ -135,39 +144,58 @@ function MenuNavigator() {
                             },
                        })}
               >
-                       <Tab.Screen 
-                            name="FeedTab" 
-                            component={FeedStackScreen} // 🔑 Usando a nova Stack
-                            options={{ title: 'Feed' }}
-                       />
+                       <Tab.Screen name="FeedTab" options={{ title: 'Feed' }}>
+                            {() => <FeedStackScreen />}
+                       </Tab.Screen>
 
-                       <Tab.Screen 
-                            name="EventosTab" 
-                            component={EventosStackScreen} // Mantendo a Stack de Eventos
-                            options={{ title: 'Eventos' }}
-                       />
+                       <Tab.Screen name="EventosTab" options={{ title: 'Eventos' }}>
+                            {() => <EventosStackScreen />}
+                       </Tab.Screen>
 
-                       <Tab.Screen 
-                            name="ProfileTab" 
-                            component={ProfileStackScreen} // 🔑 Usando a nova Stack
-                            options={{ title: 'Perfil' }}
-                       />
-
+                       <Tab.Screen name="ProfileTab" options={{ title: 'Perfil' }}>
+                            {() => <ProfileStackScreen />}
+                       </Tab.Screen>
               </Tab.Navigator>
          );
 }
 
 // ------------------------------------------------------------------
-// 4. Navegador Raiz (Root Navigator - Ponto de Início)
+// 4. Componente que define o fluxo (Autenticado vs. Não Autenticado) - CORRIGIDO
 // ------------------------------------------------------------------
-function RootNavigator() {
+function RootStackContent() {
+         const dispatch = useDispatch();
+         const { token, isRestoring } = useSelector(state => state.user);
+    
+    // 🔑 NOVO ESTADO: Garante que o useEffect termine
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false); 
+
+         useEffect(() => {
+        // Dispara a restauração e usa .finally para marcar o fim do processo
+              dispatch(restoreToken()).finally(() => {
+            setInitialLoadComplete(true);
+        });
+         }, [dispatch]);
+         
+    // 🛑 Modificação na condição de Loading
+         if (isRestoring || !initialLoadComplete) { 
+              return (
+                       <View style={styles.loadingScreen}>
+                            <ActivityIndicator size="large" color="#007AFF" />
+                       </View>
+              );
+         }
+         
          return (
               <RootStack.Navigator 
-                       screenOptions={{ headerShown: false }}
-                       initialRouteName="Auth" 
+                    screenOptions={{ headerShown: false }}
               >
-                       <RootStack.Screen name="Auth" component={AuthNavigator} /> 
-                       <RootStack.Screen name="App" component={MenuNavigator} /> 
+                    {token ? (
+                         // Se o token existe, renderiza a tela principal do App
+                         <RootStack.Screen name="App" component={MenuNavigator} />
+                    ) : (
+                         // Se o token NÃO existe, renderiza a tela de autenticação
+                         <RootStack.Screen name="Auth" component={AuthNavigator} />
+                    )}
               </RootStack.Navigator>
          );
 }
@@ -179,7 +207,7 @@ function RootNavigator() {
 export default () => (
          <Provider store={store}> 
               <NavigationContainer>
-                       <RootNavigator /> 
+                       <RootStackContent /> 
               </NavigationContainer>
          </Provider>
 );

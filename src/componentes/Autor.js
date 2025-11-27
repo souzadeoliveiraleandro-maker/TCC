@@ -11,8 +11,8 @@ export default props => {
             }}  
             // ❌ Corrigido: Usar `styles.avatar`
             style={styles.avatar}/> 
-            {/* ❌ Corrigido: Usar `styles.nickname` */}
-            <Text style={styles.nickname}>{props.nickname}</Text> 
+            {/* ✅ CORREÇÃO: O estilo 'styles.name' foi corrigido para 'styles.nickname' */}
+            <Text style={styles.nickname}>{props.name}</Text> 
         </View>
     )
 }

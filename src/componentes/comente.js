@@ -1,29 +1,32 @@
-// /src/componentes/Comente.js
-import react, { Component } from "react"
+import React from "react"
 import { View, Text, StyleSheet} from "react-native"
 
-class Comente extends Component {
-    render() {
-        let view = null
-        if (this.props.comments){
-            view = this.props.comments.map((item, index) => {
-                return(
-                    <View style={styles.comenteContainer} key={index}>
-                        <Text style={styles.nickname}> {item.nickname}</Text>
-                        {/* 🔑 Usando item.comment, que é o campo que definimos no Redux */}
-                        <Text style={styles.comment}> {item.comment}</Text> 
-                    </View>
-                )
-            })
-        }    
+// ------------------------------------------------------------------
+// 2. O COMPONENTE DE LISTAGEM DE COMENTÁRIOS (Funcional)
+// ------------------------------------------------------------------
+// Recebe a lista de comentários como prop, tipicamente do Redux Store.
+const Comente = ({ comments = [] }) => {
+    // Renderiza a lista de comentários se a prop 'comments' existir e tiver itens.
+    const commentViews = comments.map((item, index) => (
+        <View style={styles.comenteContainer} key={index}>
+            {/* O campo nickname deve existir no objeto de comentário vindo do backend */}
+            <Text style={styles.nickname}> {item.nickname}:</Text>
+            
+            {/* O campo 'comment' (ou 'text') armazena o conteúdo do comentário */}
+            <Text style={styles.comment}> {item.comment}</Text> 
+        </View>
+    ));
+    
     return (
-    <View style={styles.container}>
-        {view}
-    </View>
+        <View style={styles.container}>
+            {commentViews}
+        </View>
     )
-    }
 }
 
+// ------------------------------------------------------------------
+// 1. DEFINIÇÃO DO STYLES
+// ------------------------------------------------------------------
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -38,8 +41,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#444' // Cor escura para melhor contraste
     },
-    comment: { // Renomeado de 'comente' para 'comment'
-        color: '#555' // Cor escura para melhor contraste
+    comment: { 
+        color: '#555', // Cor escura para melhor contraste
+        marginLeft: 5, // Adiciona um pequeno espaço após o nickname
     }
 })
 

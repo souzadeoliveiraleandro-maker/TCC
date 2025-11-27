@@ -1,133 +1,159 @@
-import React, { Component } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-// 🔑 Imports obrigatórios
-import { useSelector } from 'react-redux'; // Hook para ler o estado
-import { useNavigation } from '@react-navigation/native'; // Hook para obter o objeto de navegação
-import Icon from 'react-native-vector-icons/FontAwesome';
-
-// 💡 Certifique-se que o caminho está correto
-import EventCard from '../componentes/EventCard'
-
-// ------------------------------------------------------------------
-// 1. A CLASSE Eventos (Componente de Classe)
-// ------------------------------------------------------------------
-class Eventos extends Component {
-    
-     componentDidMount() {
-         this.setNavigationOptions();
-     }
-
-     componentDidUpdate(prevProps) {
-         if (prevProps.isAdmin !== this.props.isAdmin) {
-            this.setNavigationOptions();
-         }
-     }
-     
-     setNavigationOptions = () => {
-         const { navigation, isAdmin } = this.props;
-
-         if (isAdmin === true) {
-            navigation.setOptions({
-              headerRight: () => (
-                   <TouchableOpacity 
-                       onPress={this.handleCreateEvent}
-                       style={styles.headerButton}
-                   >
-                       <Icon name="plus-circle" size={26} color="#4286f4" /> 
-                   </TouchableOpacity>
-              ),
-            });
-         } else {
-            navigation.setOptions({
-              headerRight: () => null,
-            });
-         }
-     }
-
-     handleCreateEvent = () => {
-         this.props.navigation.navigate('AddEvento'); 
-     };
-
-     renderItem = ({ item }) => {
-    // 🔑 NOVA LÓGICA: Função para navegar para a tela de detalhes
-    const handlePress = () => {
-        // Navega para a rota 'EventDetail', passando o objeto 'item' como parâmetro 'event'
-        this.props.navigation.navigate('EventDetail', { event: item });
-    };
-
-         return (
-            <EventCard
-              title={item.title}
-              date={item.date}
-              creator={item.creator}
-              imageURL={item.imageURL}
-        // 🔑 Passa a função de navegação para o EventCard (que agora é TouchableOpacity)
-        onPress={handlePress} 
-            />
-         );
-     }
-
-     render() {
-              const { eventosConfirmados } = this.props; 
-
-         return (
-            <View style={styles.container}>
-              <Text style={styles.header}>Meus Eventos Confirmados</Text>
-              
-              <FlatList
-                   data={eventosConfirmados} 
-                   keyExtractor={item => item.id}
-                   renderItem={this.renderItem}
-                   ListEmptyComponent={() => <Text style={styles.emptyText}>Você não confirmou presença em nenhum evento.</Text>}
-              />
-            </View>
-         );
-     }
-}
+import React, { use, useEffect } from 'react';
+import { 
+    View, 
+    Text, 
+    FlatList, 
+    ActivityIndicator, 
+    StyleSheet, 
+    TouchableOpacity,
+    RefreshControl
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { useIsFocused } from '@react-navigation/native'; // ✅ Adicionado useIsFocused
+import { loadEvents, resetEventAdded } from '../redux/slices/eventos.Slices'; // ✅ Importa o novo reducer
 
 // ------------------------------------------------------------------
-// 2. O WRAPPER QUE LÊ O REDUX (Componente Funcional)
-// ------------------------------------------------------------------
-function EventosWithRedux(props) {
-     const navigation = useNavigation();
-    
-         const eventos = useSelector(state => state.events.eventos);
-
-     const isAdmin = useSelector(state => state.user?.isAdmin ?? false); 
-
-     return <Eventos 
-         {...props} 
-         navigation={navigation}
-         isAdmin={isAdmin} 
-         eventosConfirmados={eventos} 
-     />;
-}
-
-// ------------------------------------------------------------------
-// 3. ESTILOS (Mantidos)
+// 1. DEFINIÇÃO DO STYLES
 // ------------------------------------------------------------------
 const styles = StyleSheet.create({
-     container: {
-         flex: 1,
-         paddingTop: 30,
-         backgroundColor: '#f5f5f5',
-     },
-     header: {
-         fontSize: 24,
-         fontWeight: 'bold',
-         textAlign: 'center',
-         marginVertical: 10,
-     },
-     emptyText: {
-         textAlign: 'center',
-         marginTop: 50,
-         fontSize: 16,
-         color: '#999',
-     },
-     headerButton: {
-         marginRight: 15, 
-         padding: 5,
-     },
+    container: { flex: 1, backgroundColor: '#fff' },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { marginTop: 10, fontSize: 16 },
+    errorText: { color: 'red', fontSize: 16, marginBottom: 10, textAlign: 'center' },
+    eventCard: { 
+        padding: 15, 
+        borderBottomWidth: 1, 
+        borderBottomColor: '#eee', 
+        backgroundColor: '#f9f9f9',
+        marginHorizontal: 10,
+        marginVertical: 5,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    eventTitle: { fontWeight: 'bold', fontSize: 18, marginBottom: 5, color: '#333' },
+    eventDetails: { fontSize: 14, color: '#666' },
+    eventCreator: { fontSize: 12, color: '#888', marginTop: 5 },
+    createButton: {
+        backgroundColor: '#FFC107',
+        padding: 15,
+        borderRadius: 8,
+        margin: 10,
+        alignItems: 'center',
+    },
+    createButtonText: {
+        color: '#000',
+        fontWeight: 'bold',
+        fontSize: 16,
+    }
 });
 
-export default EventosWithRedux;
+// ------------------------------------------------------------------
+// 2. O COMPONENTE DA TELA DE EVENTOS
+// ------------------------------------------------------------------
+export default function EventsScreen({ navigation }) {
+    const dispatch = useDispatch();
+    // Acessa o array de eventos, o estado de loading e erro
+    const [initialLoadAttempted, setInitialLoadAttempted] = React.useState(false); // ✅ Novo estado para controlar o carregamento inicial
+    const isFocused = useIsFocused(); // ✅ Hook para saber se a tela está em foco
+    const { eventos, loading: reduxLoading, error, eventAdded } = useSelector(state => state.events); // ✅ Pega o novo estado 'eventAdded'
+    // 🔽 1. Acessa os dados do usuário logado a partir do estado do Redux.
+    const user = useSelector(state => state.user);
+    const [refreshing, setRefreshing] = React.useState(false);
+
+    // Função de Carregamento Principal
+    const fetchEvents = React.useCallback(() => { // ✅ Usar useCallback para otimização
+        if (reduxLoading) return; // Evita múltiplas chamadas se já estiver carregando
+        setRefreshing(true);
+        dispatch(loadEvents()).finally(() => {
+            setRefreshing(false);
+            setInitialLoadAttempted(true); // ✅ Marca que a tentativa de carregamento inicial foi feita
+        });
+    }, [dispatch, reduxLoading]);
+
+    // ✅ useEffect 1: Responsável APENAS pelo carregamento inicial dos eventos.
+    useEffect(() => {
+        if (isFocused && !initialLoadAttempted && eventos.length === 0) {
+            fetchEvents();
+        }
+    }, [isFocused, initialLoadAttempted, eventos.length, fetchEvents]);
+
+    // ✅ useEffect 2: Responsável APENAS por recarregar a lista após um novo evento ser adicionado.
+    useEffect(() => {
+        if (isFocused && eventAdded) {
+            // Recarrega a lista de eventos para incluir o novo de forma segura.
+            fetchEvents();
+            // Reseta o sinalizador para não recarregar novamente sem necessidade.
+            dispatch(resetEventAdded());
+        }
+    }, [isFocused, eventAdded, dispatch, fetchEvents]);
+
+    // Renderiza um placeholder enquanto os dados estão sendo buscados pela primeira vez
+    if ((reduxLoading && eventos.length === 0) || (!initialLoadAttempted && eventos.length === 0)) { // ✅ Mostra loading se Redux estiver carregando OU se ainda não tentou carregar e não há eventos
+        return (
+            <View style={styles.centered}>
+                <ActivityIndicator size="large" color="#FFC107" />
+                <Text style={styles.loadingText}>Carregando eventos...</Text>
+            </View>
+        );
+    }
+
+    const renderEvent = ({ item }) => (
+        // ✅ Envolve o card em um TouchableOpacity para torná-lo clicável
+        <TouchableOpacity 
+            style={styles.eventCard}
+            // ✅ Navega para a tela de detalhes, passando o objeto 'item' (o evento) como parâmetro
+            onPress={() => navigation.navigate('EventDetail', { event: item })}
+        >
+            <Text style={styles.eventTitle}>{item.title}</Text>
+            <Text style={styles.eventDetails}>Data: {new Date(item.date).toLocaleDateString()}</Text>
+            <Text style={styles.eventCreator}>Criado por: {item.creatorNickname}</Text>
+            {/* Você pode adicionar a imagem aqui usando <Image source={{ uri: item.image_url }} /> */}
+        </TouchableOpacity>
+    );
+
+    return (
+        <View style={styles.container}>
+            {/* Exibe mensagem de erro, se houver */}
+            {error && (
+                <View style={styles.centeredError}>
+                    <Text style={styles.errorText}>Falha ao carregar eventos: {error}</Text>
+                    <TouchableOpacity onPress={fetchEvents}>
+                        <Text style={{ color: '#007BFF', fontSize: 16, marginTop: 10 }}>
+                            Tentar Novamente
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* 🔽 2. O botão só será renderizado se 'user.isAdmin' for verdadeiro. */}
+            {user.isAdmin && (
+                <TouchableOpacity 
+                    style={styles.createButton} 
+                    onPress={() => navigation.navigate('AddEvento')}
+                >
+                    <Text style={styles.createButtonText}>+ Criar Novo Evento</Text>
+                </TouchableOpacity>
+            )}
+
+            {!error && (
+                <FlatList
+                    data={eventos}
+                    keyExtractor={item => item.id.toString()}
+                    renderItem={renderEvent}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={fetchEvents} />
+                    }
+                    ListEmptyComponent={() => (
+                        <View style={styles.centered}>
+                            <Text>{initialLoadAttempted ? 'Nenhum evento agendado. Crie o primeiro!' : 'Carregando...'}</Text>
+                        </View>
+                    )}
+                />
+            )}
+        </View>
+    );
+}

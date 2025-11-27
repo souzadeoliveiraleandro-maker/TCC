@@ -19,7 +19,7 @@ function EventDetail({ route }) {
     return (
         <ScrollView style={styles.container}>
             {/* Imagem de Capa */}
-            <Image source={{ uri: event.imageURL }} style={styles.coverImage} />
+            <Image source={{ uri: event.image_url }} style={styles.coverImage} />
 
             <View style={styles.contentContainer}>
                 <Text style={styles.title}>{event.title}</Text>
@@ -27,17 +27,19 @@ function EventDetail({ route }) {
                 {/* Data, Local e Criador - Fatores Importantes */}
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>🗓️ Data:</Text>
-                    <Text style={styles.infoText}>{event.date}</Text>
+                    <Text style={styles.infoText}>{new Date(event.date).toLocaleDateString('pt-BR')}</Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>📍 Local:</Text>
-                    <Text style={styles.infoText}>{event.location}</Text>
+                    <Text style={styles.infoLabel}>📍 Local:</Text> 
+                    <Text style={styles.infoText}>
+                        {event.location || 'Desconhecido'}
+                        </Text> 
                 </View>
 
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>👤 Criado por:</Text>
-                    <Text style={styles.infoText}>{event.creator}</Text>
+                    <Text style={styles.infoText}>{event.creatorNickname || 'Desconhecido'}</Text>
                 </View>
 
                 {/* Descrição Detalhada */}
